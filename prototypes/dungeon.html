@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dragon's Lair Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #0e0f14;
+        --panel: #171922;
+        --text: #e6e2d8;
+        --muted: #9a958a;
+        --line: #2a2d3a;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 24px 16px 40px;
+    }
+    h1 {
+        font-family: "Press Start 2P", monospace;
+        font-size: 16px;
+        letter-spacing: 1px;
+        color: #f2c14e;
+        margin: 0 0 16px;
+        text-align: center;
+        line-height: 1.6;
+    }
+    #game {
+        width: 100%;
+        max-width: 1140px;
+        image-rendering: pixelated;
+        border: 4px solid #2a2d3a;
+        border-radius: 6px;
+        background: #000;
+        display: block;
+    }
+    .controls {
+        margin: 12px 0 18px;
+        color: var(--muted);
+        font-size: 14px;
+    }
+    .legend {
+        width: 100%;
+        max-width: 1140px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 10px;
+    }
+    .item {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 10px 12px;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+    .sw {
+        flex: 0 0 22px;
+        height: 22px;
+        border-radius: 3px;
+        border: 2px solid rgba(0, 0, 0, .5);
+        margin-top: 1px;
+    }
+    .item b { display: block; margin-bottom: 2px; }
+    .item span { color: var(--muted); }
+</style>
+</head>
+<body>
+<h1>DRAGON'S LAIR DUEL – MAP DESIGN</h1>
+<canvas id="game" width="760" height="568"></canvas>
+<label class="controls"><input type="checkbox" id="grid-toggle"> Show tile coordinates</label>
+
+<div class="legend">
+    <div class="item"><div class="sw" style="background:#585c6c"></div><div><b>Wall</b><span>Blocks movement and arrows. Ghost mode (G) lets a player walk through walls.</span></div></div>
+    <div class="item"><div class="sw" style="background:#2c303c"></div><div><b>Floor</b><span>Walkable tiles. Fireballs only land on floor tiles.</span></div></div>
+    <div class="item"><div class="sw" style="background:#3a1616"></div><div><b>Dragon's lair</b><span>The ring of tiles around the dragon, guarded by four pillars.</span></div></div>
+    <div class="item"><div class="sw" style="background:#b3261e"></div><div><b>Dragon</b><span>A 3×3 boss in the centre. Each player has a separate dragon HP bar – your arrows only lower yours.</span></div></div>
+    <div class="item"><div class="sw" style="background:#e86fa8"></div><div><b>Captive princess</b><span>Locked in a cage behind the dragon. The player who slays the dragon frees her and wins.</span></div></div>
+    <div class="item"><div class="sw" style="background:#ff9a1a"></div><div><b>Braziers</b><span>Stand in front of and on both sides of the dragon. Together with the cage they block every straight shot, so players must aim from an angle.</span></div></div>
+    <div class="item"><div class="sw" style="background:#c9d2e0"></div><div><b>Arrow spawns</b><span>Three spots on each side. The active side alternates between left and right. One arrow = one shot.</span></div></div>
+    <div class="item"><div class="sw" style="background:linear-gradient(90deg,#3d7bff 50%,#ff4d4d 50%)"></div><div><b>Player spawns</b><span>P1 (blue) starts at the top, P2 (red) at the bottom – equally far from both arrow sides.</span></div></div>
+    <div class="item"><div class="sw" style="background:#ff7a1a"></div><div><b>Fireballs</b><span>A warning marker for 1 second, then the tile burns for about 4 seconds.</span></div></div>
+</div>
+
+<script>
+// ===================== Constants =====================
+const TILE = 40;            // Size of one tile in pixels
+const COLS = 19;            // Number of columns
+const ROWS = 13;            // Number of rows
+const HUD = 48;             // Height of the top bar with HP bars and timer
+
+// ===================== The map (GameMap module) =====================
+// Only the top-left quarter is defined; the rest is mirrored,
+// so the map is symmetric and fair for both players.
+// W = wall, . = floor, S = arrow spawn, P = pillar, L = lair floor, D = dragon
+// C = princess cage, B = brazier (both block movement and arrows)
+const GameMap = (function() {
+    const quarter = [
+        "WWWWWWWWWW",
+        "W.........",
+        "W.WW.WWW..",
+        "W.WS......",
+        "W...W..PLL",
+        "W.W.W..LDD",
+        "WS.....LDD"
+    ];
+
+    const grid = [];
+    for (let r = 0; r < ROWS; r++) {
+        const row = [];
+        for (let c = 0; c < COLS; c++) {
+            const qr = r <= 6 ? r : 12 - r;
+            const qc = c <= 9 ? c : 18 - c;
+            row.push(quarter[qr][qc]);
+        }
+        grid.push(row);
+    }
+    // Player spawn points
+    grid[1][9] = "1";
+    grid[11][9] = "2";
+    // The princess cage behind the dragon and braziers on the other three sides
+    grid[4][9] = "C";
+    grid[8][9] = "B";
+    grid[6][7] = "B";
+    grid[6][11] = "B";
+
+    const get = function(c, r) {
+        if (c < 0 || r < 0 || c >= COLS || r >= ROWS) return "W";
+        return grid[r][c];
+    };
+    const isWall = function(c, r) {
+        const t = get(c, r);
+        return t === "W" || t === "P" || t === "C" || t === "B";
+    };
+    const isFloor = function(c, r) {
+        return get(c, r) === ".";
+    };
+    const find = function(type) {
+        const result = [];
+        for (let r = 0; r < ROWS; r++)
+            for (let c = 0; c < COLS; c++)
+                if (grid[r][c] === type) result.push({ c, r });
+        return result;
+    };
+
+    return { get, isWall, isFloor, find };
+})();
+
+// ===================== Helper functions =====================
+// Deterministic "random" number, so every tile always looks the same
+function hash(x, y, s) {
+    let n = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(s, 1442695041);
+    n = Math.imul(n ^ (n >>> 13), 1274126177);
+    return ((n ^ (n >>> 16)) >>> 0) / 4294967295;
+}
+function rgb(c, f) {
+    return "rgb(" + Math.round(c[0] * f) + "," + Math.round(c[1] * f) + "," + Math.round(c[2] * f) + ")";
+}
+// Pixel art is written as text rows; the left half is mirrored
+function mirrorRows(rows) {
+    return rows.map(r => r + r.split("").reverse().join(""));
+}
+function drawPixels(ctx, rows, palette, x, y, scale, filter) {
+    for (let r = 0; r < rows.length; r++) {
+        for (let c = 0; c < rows[r].length; c++) {
+            const ch = rows[r][c];
+            if (ch === "." || !palette[ch]) continue;
+            if (filter && !filter(ch)) continue;
+            ctx.fillStyle = palette[ch];
+            ctx.fillRect(x + c * scale, y + r * scale, scale, scale);
+        }
+    }
+}
+
+// ===================== Static background =====================
+// Floor and walls are drawn once onto a hidden canvas to save time
+const bg = document.createElement("canvas");
+bg.width = COLS * TILE;
+bg.height = ROWS * TILE;
+const bctx = bg.getContext("2d");
+
+function drawFloorTile(c, r) {
+    const x = c * TILE, y = r * TILE;
+    const shade = 0.85 + hash(c, r, 1) * 0.25;
+    bctx.fillStyle = rgb([44, 48, 60], shade);
+    bctx.fillRect(x, y, TILE, TILE);
+
+    // Stone slabs: each tile is split in two
+    bctx.fillStyle = "rgba(0,0,0,0.35)";
+    bctx.fillRect(x + TILE - 2, y, 2, TILE);
+    bctx.fillRect(x, y + TILE - 2, TILE, 2);
+    if (hash(c, r, 2) > 0.5) bctx.fillRect(x, y + 18, TILE, 2);
+    else bctx.fillRect(x + 18, y, 2, TILE);
+
+    // Small specks for texture
+    for (let i = 0; i < 4; i++) {
+        const px = x + Math.floor(hash(c, r, 10 + i) * 9) * 4;
+        const py = y + Math.floor(hash(c, r, 20 + i) * 9) * 4;
+        bctx.fillStyle = hash(c, r, 30 + i) > 0.5 ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.18)";
+        bctx.fillRect(px, py, 4, 4);
+    }
+    // A crack now and then
+    if (hash(c, r, 3) > 0.82) {
+        bctx.fillStyle = "rgba(0,0,0,0.45)";
+        let cx = x + 8 + Math.floor(hash(c, r, 4) * 4) * 4, cy = y + 6;
+        for (let i = 0; i < 6; i++) {
+            bctx.fillRect(cx, cy, 2, 4);
+            cx += hash(c, r, 40 + i) > 0.5 ? 2 : -2;
+            cy += 4;
+        }
+    }
+}
+
+function drawLairTile(c, r) {
+    const x = c * TILE, y = r * TILE;
+    const shade = 0.85 + hash(c, r, 5) * 0.25;
+    bctx.fillStyle = rgb([50, 22, 24], shade);
+    bctx.fillRect(x, y, TILE, TILE);
+    bctx.fillStyle = "rgba(0,0,0,0.4)";
+    bctx.fillRect(x + TILE - 2, y, 2, TILE);
+    bctx.fillRect(x, y + TILE - 2, TILE, 2);
+    bctx.fillStyle = "rgba(255,120,60,0.06)";
+    bctx.fillRect(x + 2, y + 2, TILE - 6, 2);
+}
+
+function drawWallTile(c, r) {
+    const x = c * TILE, y = r * TILE;
+    const shade = 0.9 + hash(c, r, 6) * 0.15;
+    const below = GameMap.get(c, r + 1);
+    const frontVisible = r + 1 < ROWS && (below !== "W" && below !== "P");
+    const topH = frontVisible ? 26 : TILE;
+
+    // Top of the wall
+    bctx.fillStyle = rgb([86, 90, 106], shade);
+    bctx.fillRect(x, y, TILE, topH);
+    bctx.fillStyle = "rgba(0,0,0,0.28)";
+    for (let by = 0; by < topH; by += 10) {
+        bctx.fillRect(x, y + by, TILE, 2);
+        const offset = (Math.floor(by / 10) + c) % 2 === 0 ? 10 : 30;
+        bctx.fillRect(x + offset, y + by, 2, 10);
+    }
+    bctx.fillStyle = "rgba(255,255,255,0.06)";
+    bctx.fillRect(x, y, TILE, 2);
+
+    // Front of the wall (visible when there is floor below)
+    if (frontVisible) {
+        bctx.fillStyle = rgb([50, 52, 64], shade);
+        bctx.fillRect(x, y + topH, TILE, TILE - topH);
+        bctx.fillStyle = "rgba(255,255,255,0.12)";
+        bctx.fillRect(x, y + topH, TILE, 2);
+        bctx.fillStyle = "rgba(0,0,0,0.3)";
+        bctx.fillRect(x + 12 + (c % 2) * 14, y + topH + 2, 2, TILE - topH - 2);
+        // Shadow on the floor below
+        bctx.fillStyle = "rgba(0,0,0,0.35)";
+        bctx.fillRect(x, y + TILE, TILE, 8);
+    }
+}
+
+function drawPillar(c, r) {
+    const x = c * TILE, y = r * TILE;
+    drawLairTile(c, r);
+    bctx.fillStyle = "rgba(0,0,0,0.4)";
+    bctx.fillRect(x + 6, y + 30, 30, 8);
+    bctx.fillStyle = "#3b3e4b";
+    bctx.fillRect(x + 6, y + 26, 28, 8);
+    bctx.fillStyle = "#6a6f82";
+    bctx.fillRect(x + 10, y + 4, 20, 24);
+    bctx.fillStyle = "#8a8fa3";
+    bctx.fillRect(x + 12, y + 4, 4, 24);
+    bctx.fillStyle = "#4a4e5e";
+    bctx.fillRect(x + 24, y + 4, 4, 24);
+    bctx.fillStyle = "#7b8094";
+    bctx.fillRect(x + 6, y, 28, 6);
+}
+
+function drawPedestal(c, r) {
+    const x = c * TILE, y = r * TILE;
+    bctx.fillStyle = "rgba(0,0,0,0.35)";
+    bctx.fillRect(x + 6, y + 28, 30, 6);
+    bctx.fillStyle = "#4b4f60";
+    bctx.fillRect(x + 6, y + 22, 28, 8);
+    bctx.fillStyle = "#6c7186";
+    bctx.fillRect(x + 8, y + 18, 24, 6);
+    bctx.fillStyle = "#8b90a5";
+    bctx.fillRect(x + 8, y + 18, 24, 2);
+}
+
+function drawSpawnSigil(c, r, color) {
+    const x = c * TILE + TILE / 2, y = r * TILE + TILE / 2;
+    bctx.strokeStyle = color;
+    bctx.globalAlpha = 0.55;
+    bctx.lineWidth = 2;
+    bctx.beginPath();
+    bctx.arc(x, y, 16, 0, Math.PI * 2);
+    bctx.stroke();
+    bctx.beginPath();
+    bctx.arc(x, y, 10, 0, Math.PI * 2);
+    bctx.stroke();
+    bctx.globalAlpha = 1;
+}
+
+function buildBackground() {
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const t = GameMap.get(c, r);
+            if (t === "L" || t === "D" || t === "C" || t === "B") drawLairTile(c, r);
+            else drawFloorTile(c, r);
+        }
+    }
+    // Walls are drawn row by row, so the shadows fall correctly
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const t = GameMap.get(c, r);
+            if (t === "W") drawWallTile(c, r);
+            else if (t === "P") drawPillar(c, r);
+            else if (t === "S") drawPedestal(c, r);
+            else if (t === "1") drawSpawnSigil(c, r, "#3d7bff");
+            else if (t === "2") drawSpawnSigil(c, r, "#ff4d4d");
+        }
+    }
+}
+
+// ===================== Lava cracks in the lair =====================
+const cracks = [];
+GameMap.find("L").concat(GameMap.find("D")).forEach(({ c, r }) => {
+    const n = 1 + Math.floor(hash(c, r, 7) * 2);
+    for (let i = 0; i < n; i++) {
+        let x = c * TILE + 4 + Math.floor(hash(c, r, 50 + i) * 8) * 4;
+        let y = r * TILE + 4;
+        const pts = [];
+        for (let k = 0; k < 7; k++) {
+            pts.push({ x, y });
+            x += hash(c, r, 60 + i * 10 + k) > 0.5 ? 4 : -4;
+            y += 4;
+        }
+        cracks.push(pts);
+    }
+});
+
+// ===================== Torches =====================
+const torches = [
+    { c: 4, r: 0 }, { c: 14, r: 0 }, { c: 4, r: 12 }, { c: 14, r: 12 },
+    { c: 0, r: 3 }, { c: 18, r: 3 }, { c: 0, r: 9 }, { c: 18, r: 9 }
+];
+
+// ===================== The dragon (pixel art) =====================
+const dragonRows = mirrorRows([
+    "............",
+    "....hk......",
+    "G...hhk.....",
+    "GG...hhkkkkk",
+    "GgG...krrrrr",
+    "GggG..krRRrr",
+    "GgggG.kreerr",
+    "GggggGkrkkrr",
+    "GgggggGkrrrr",
+    "GgggggGkkwkw",
+    "GgggggGrkooo",
+    ".GgggGkrrrkk",
+    "..GggGkrrryy",
+    "...GGkrrrryy",
+    "....krRrrryy",
+    "...krRrrrryy",
+    "..krrrrrrryy",
+    "..krrdrrrryy",
+    "..krrdrrrrry",
+    "..kddkrrrrrr",
+    ".kddkkkrrrrr",
+    ".kwkwkdkrrrr",
+    "..kk..kkkkkk",
+    "............"
+]);
+const dragonArea = { x: 8 * TILE, y: 5 * TILE, size: 3 * TILE };
+let dragonFlashUntil = 0;
+
+function drawDragon(ctx, t) {
+    const scale = 5;
+    const bob = Math.round(Math.sin(t / 400) * 1.5);
+    const flap = Math.sin(t / 220) > 0 ? 0 : 1;
+    const glow = 0.5 + 0.5 * Math.sin(t / 150);
+    const palette = {
+        k: "#1a0a0a", r: "#b3261e", R: "#e04a3a", d: "#6e1410",
+        y: "#f2c14e", w: "#f4efe6", h: "#e8dcc0",
+        g: "#7a1e3a", G: "#4a0f24",
+        e: "rgb(255," + Math.round(200 + 40 * glow) + ",60)",
+        o: "rgb(255," + Math.round(110 + 80 * glow) + ",30)"
+    };
+    const x = dragonArea.x, y = HUD + dragonArea.y;
+
+    // Shadow under the dragon
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.beginPath();
+    ctx.ellipse(x + 60, y + 112, 46, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const isWing = ch => ch === "G" || ch === "g";
+    drawPixels(ctx, dragonRows, palette, x, y + bob + flap * scale, scale, isWing);
+    drawPixels(ctx, dragonRows, palette, x, y + bob, scale, ch => !isWing(ch));
+
+    // White flash when the dragon is hit by an arrow
+    if (t < dragonFlashUntil) {
+        ctx.globalAlpha = 0.55;
+        const white = {};
+        Object.keys(palette).forEach(k => white[k] = "#ffffff");
+        drawPixels(ctx, dragonRows, white, x, y + bob, scale);
+        ctx.globalAlpha = 1;
+    }
+}
+
+// ===================== The captive princess =====================
+const princessRows = mirrorRows([
+    "...y.y",
+    "...yyy",
+    "..hhhh",
+    ".hhsss",
+    ".hhsks",
+    ".hhsss",
+    "..hhss",
+    "...ppp",
+    "..pppp",
+    "..pPpp",
+    ".ppppp",
+    ".ppppp",
+    "pppppp"
+]);
+
+function drawCage(ctx, t) {
+    const c = 9, r = 4;
+    const x = c * TILE, y = HUD + r * TILE;
+    const top = y - 14, bottom = y + 36;
+
+    // Chain up to the ceiling
+    ctx.fillStyle = "#3a3d48";
+    for (let cy = y - 40; cy < top; cy += 6) ctx.fillRect(x + 19, cy, 2, 4);
+
+    // Princess (behind the bars)
+    const sway = Math.sin(t / 600) > 0.6 ? -1 : 0;
+    drawPixels(ctx, princessRows, {
+        y: "#f2c14e", h: "#7a4320", s: "#f1c9a5", k: "#2b1a12",
+        p: "#e86fa8", P: "#f6a8cb"
+    }, x + 2 + sway, top + 8, 3);
+
+    // Cage: dark iron bars with a domed top
+    ctx.fillStyle = "#1c1d24";
+    ctx.fillRect(x + 1, bottom - 4, 38, 6);
+    ctx.fillRect(x + 1, top, 38, 4);
+    ctx.fillRect(x + 6, top - 4, 28, 4);
+    ctx.fillStyle = "#4a4d5c";
+    for (let bx = x + 2; bx <= x + 36; bx += 6) ctx.fillRect(bx, top + 2, 2, bottom - top - 4);
+    ctx.fillStyle = "#6d7184";
+    ctx.fillRect(x + 1, top, 38, 1);
+    // Padlock
+    ctx.fillStyle = "#f2c14e";
+    ctx.fillRect(x + 16, bottom - 14, 8, 7);
+    ctx.fillStyle = "#1c1d24";
+    ctx.fillRect(x + 19, bottom - 12, 2, 3);
+
+    // "HELP!" bubble now and then
+    const phase = (t % 7000) / 7000;
+    if (phase > 0.15 && phase < 0.45) {
+        ctx.font = "8px 'Press Start 2P', monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        const bx = x + 20, by = top - 18;
+        ctx.fillStyle = "#f4efe6";
+        ctx.fillRect(bx - 26, by - 9, 52, 18);
+        ctx.fillRect(bx - 4, by + 9, 6, 4);
+        ctx.fillStyle = "#b3261e";
+        ctx.fillText("HELP!", bx, by + 1);
+    }
+}
+
+// ===================== The braziers =====================
+const braziers = GameMap.find("B");
+function drawBrazier(ctx, c, r, t) {
+    const x = c * TILE, y = HUD + r * TILE;
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.beginPath();
+    ctx.ellipse(x + 20, y + 34, 15, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#2b2c34";
+    ctx.fillRect(x + 16, y + 22, 8, 12);
+    ctx.fillRect(x + 10, y + 32, 20, 4);
+    ctx.fillStyle = "#4a4d5c";
+    ctx.fillRect(x + 6, y + 14, 28, 10);
+    ctx.fillStyle = "#6d7184";
+    ctx.fillRect(x + 6, y + 14, 28, 2);
+    for (let k = 0; k < 3; k++) {
+        const h = 10 + 6 * Math.abs(Math.sin(t / 85 + k * 2.1 + c));
+        const fx = x + 10 + k * 7;
+        ctx.fillStyle = "#e0451a";
+        ctx.fillRect(fx, y + 14 - h, 7, h);
+        ctx.fillStyle = "#ffb43a";
+        ctx.fillRect(fx + 2, y + 16 - h * 0.7, 3, h * 0.6);
+    }
+}
+
+// ===================== Archers (the players) =====================
+const archerRows = mirrorRows([
+    "...kkk",
+    "..kccc",
+    ".kccss",
+    ".kcsks",
+    ".kcsss",
+    "..kccc",
+    ".kcttt",
+    "kctttt",
+    "kcttyy",
+    ".kcttt",
+    "..kddk",
+    "..kk.k"
+]);
+function drawArcher(ctx, c, r, color, t, offset) {
+    const scale = 3;
+    const bob = Math.sin(t / 300 + offset) > 0 ? 0 : 1;
+    const x = c * TILE + 2, y = HUD + r * TILE + 1 + bob;
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.beginPath();
+    ctx.ellipse(c * TILE + 20, HUD + r * TILE + 37, 12, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    drawPixels(ctx, archerRows, {
+        k: "#0d0e12", c: color, s: "#f1c9a5", t: "#4f6b3a", y: "#c9a23a", d: "#5a4030"
+    }, x, y, scale);
+
+    // The bow, always held in the right hand
+    ctx.strokeStyle = "#8a5a2b";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(x + 26, y + 20, 13, -1.15, 1.15);
+    ctx.stroke();
+    ctx.strokeStyle = "#e6e2d8";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x + 26 + 13 * Math.cos(-1.15), y + 20 + 13 * Math.sin(-1.15));
+    ctx.lineTo(x + 26 + 13 * Math.cos(1.15), y + 20 + 13 * Math.sin(1.15));
+    ctx.stroke();
+}
+
+// ===================== Arrows =====================
+function drawArrow(ctx, x, y, angle, len) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.fillStyle = "#8a5a2b";
+    ctx.fillRect(-len / 2, -1, len, 2);
+    ctx.fillStyle = "#d8dde6";
+    ctx.beginPath();
+    ctx.moveTo(len / 2 + 5, 0);
+    ctx.lineTo(len / 2 - 1, -4);
+    ctx.lineTo(len / 2 - 1, 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#e04a3a";
+    ctx.fillRect(-len / 2 - 1, -4, 5, 3);
+    ctx.fillRect(-len / 2 - 1, 1, 5, 3);
+    ctx.restore();
+}
+
+// A bundle of arrows lying on a spawn pedestal
+function drawArrowPickup(ctx, c, r, t) {
+    const x = c * TILE + 20, y = HUD + r * TILE + 10;
+    const float = Math.sin(t / 350 + c) * 2;
+    const g = ctx.createRadialGradient(x, y + 2, 2, x, y + 2, 26);
+    g.addColorStop(0, "rgba(200,220,255,0.55)");
+    g.addColorStop(1, "rgba(200,220,255,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(x - 26, y - 24, 52, 52);
+    for (let i = -1; i <= 1; i++)
+        drawArrow(ctx, x + i * 3, y + float + i * 3, -0.6, 22);
+}
+
+// Arrows in flight (demo): each player shoots at the dragon now and then
+const shots = [];
+const damageTexts = [];
+let lastShot = 0;
+let shooter = 0;
+const shooters = [
+    { c: 8, r: 2, color: "#3d7bff", dx: 0, dy: 1, stopY: HUD + 5 * TILE + 14, arrows: 3, hp: 0.82 },
+    { c: 10, r: 10, color: "#ff4d4d", dx: 0, dy: -1, stopY: HUD + 8 * TILE - 12, arrows: 2, hp: 0.64 }
+];
+
+function updateShots(ctx, t, dt) {
+    if (t - lastShot > 1800) {
+        const s = shooters[shooter];
+        if (s.arrows === 0) s.arrows = 3;   // Demo: refill when empty
+        s.arrows--;
+        shots.push({
+            x: s.c * TILE + 20, y: HUD + s.r * TILE + 20,
+            dx: s.dx, dy: s.dy, stopY: s.stopY, owner: s
+        });
+        shooter = 1 - shooter;
+        lastShot = t;
+    }
+    for (let i = shots.length - 1; i >= 0; i--) {
+        const a = shots[i];
+        a.x += a.dx * 420 * dt;
+        a.y += a.dy * 420 * dt;
+        const hit = a.dy > 0 ? a.y >= a.stopY : a.y <= a.stopY;
+        if (hit) {
+            dragonFlashUntil = t + 120;
+            a.owner.hp = Math.max(0.1, a.owner.hp - 0.05);
+            damageTexts.push({ x: a.x, y: a.y, color: a.owner.color, t0: t });
+            shots.splice(i, 1);
+            continue;
+        }
+        drawArrow(ctx, a.x, a.y, Math.atan2(a.dy, a.dx), 24);
+    }
+    // Floating damage numbers
+    ctx.font = "10px 'Press Start 2P', monospace";
+    ctx.textAlign = "center";
+    for (let i = damageTexts.length - 1; i >= 0; i--) {
+        const d = damageTexts[i];
+        const age = t - d.t0;
+        if (age > 800) { damageTexts.splice(i, 1); continue; }
+        ctx.globalAlpha = 1 - age / 800;
+        ctx.fillStyle = d.color;
+        ctx.fillText("-5", d.x + 14, d.y - age / 25);
+        ctx.globalAlpha = 1;
+    }
+}
+
+// ===================== Fireballs (demo) =====================
+const WARN_TIME = 1000;
+const BURN_TIME = 4000;
+const fires = [];
+let lastFire = 0;
+
+function spawnFire(t) {
+    const floors = GameMap.find(".").filter(f => !shooters.some(s => s.c === f.c && s.r === f.r));
+    const target = floors[Math.floor(Math.random() * floors.length)];
+    if (fires.some(f => f.c === target.c && f.r === target.r)) return;
+    fires.push({ c: target.c, r: target.r, t0: t });
+}
+
+function drawFires(ctx, t) {
+    for (let i = fires.length - 1; i >= 0; i--) {
+        const f = fires[i];
+        const age = t - f.t0;
+        const cx = f.c * TILE + 20, cy = HUD + f.r * TILE + 20;
+
+        if (age < WARN_TIME) {
+            // Warning: a pulsing red ring
+            const p = age / WARN_TIME;
+            ctx.strokeStyle = "rgba(255,60,40," + (0.5 + 0.5 * Math.sin(age / 60)) + ")";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 6 + 12 * p, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillStyle = "rgba(255,60,40,0.18)";
+            ctx.fillRect(f.c * TILE + 2, HUD + f.r * TILE + 2, TILE - 4, TILE - 4);
+
+            // The fireball flies in an arc from the dragon's mouth
+            const sx = dragonArea.x + 60, sy = HUD + dragonArea.y + 52;
+            const bx = sx + (cx - sx) * p;
+            const by = sy + (cy - sy) * p - Math.sin(p * Math.PI) * 90;
+            const g = ctx.createRadialGradient(bx, by, 1, bx, by, 14);
+            g.addColorStop(0, "#fff3b0");
+            g.addColorStop(0.4, "#ff9a1a");
+            g.addColorStop(1, "rgba(255,60,0,0)");
+            ctx.fillStyle = g;
+            ctx.fillRect(bx - 14, by - 14, 28, 28);
+        } else if (age < WARN_TIME + BURN_TIME) {
+            // A burning tile
+            const b = age - WARN_TIME;
+            const fade = b > BURN_TIME - 500 ? (BURN_TIME - b) / 500 : 1;
+            ctx.globalAlpha = fade;
+            ctx.fillStyle = "rgba(255,90,20,0.35)";
+            ctx.fillRect(f.c * TILE + 2, HUD + f.r * TILE + 2, TILE - 4, TILE - 4);
+            for (let k = 0; k < 4; k++) {
+                const fx = f.c * TILE + 6 + k * 8;
+                const h = 14 + 8 * Math.abs(Math.sin(t / 90 + k * 1.7 + f.c));
+                const base = HUD + f.r * TILE + 34;
+                ctx.fillStyle = "#c2260f";
+                ctx.fillRect(fx, base - h, 8, h);
+                ctx.fillStyle = "#ff8a1a";
+                ctx.fillRect(fx + 2, base - h + 4, 4, h - 4);
+                ctx.fillStyle = "#ffe27a";
+                ctx.fillRect(fx + 2, base - h * 0.45, 4, h * 0.45);
+            }
+            // Sparks
+            for (let k = 0; k < 3; k++) {
+                const ey = ((t / 8 + k * 37 + f.r * 13) % 30);
+                ctx.fillStyle = "#ffd36b";
+                ctx.fillRect(f.c * TILE + 8 + k * 11, HUD + f.r * TILE + 30 - ey, 2, 2);
+            }
+            ctx.globalAlpha = 1;
+        } else {
+            fires.splice(i, 1);
+        }
+    }
+}
+
+// ===================== HUD =====================
+function drawHUD(ctx, t, arrowSide) {
+    const W = COLS * TILE;
+    ctx.fillStyle = "#14151c";
+    ctx.fillRect(0, 0, W, HUD);
+    ctx.fillStyle = "#2a2d3a";
+    ctx.fillRect(0, HUD - 3, W, 3);
+
+    ctx.font = "10px 'Press Start 2P', monospace";
+    ctx.textBaseline = "middle";
+
+    // Player 1
+    ctx.fillStyle = "#3d7bff";
+    ctx.textAlign = "left";
+    ctx.fillText("P1", 14, 16);
+    ctx.fillStyle = "#9a958a";
+    ctx.fillText("DRAGON HP", 50, 16);
+    drawBar(ctx, 14, 26, 180, shooters[0].hp, "#3d7bff");
+    drawArrowCount(ctx, 214, 30, shooters[0].arrows, "left");
+
+    // Player 2
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#ff4d4d";
+    ctx.fillText("P2", W - 14, 16);
+    ctx.fillStyle = "#9a958a";
+    ctx.fillText("DRAGON HP", W - 50, 16);
+    drawBar(ctx, W - 194, 26, 180, shooters[1].hp, "#ff4d4d");
+    drawArrowCount(ctx, W - 214, 30, shooters[1].arrows, "right");
+
+    // Timer
+    const remaining = 180 - Math.floor(t / 1000) % 180;
+    const mm = Math.floor(remaining / 60), ss = String(remaining % 60).padStart(2, "0");
+    ctx.textAlign = "center";
+    ctx.font = "16px 'Press Start 2P', monospace";
+    ctx.fillStyle = "#e6e2d8";
+    ctx.fillText(mm + ":" + ss, W / 2, 18);
+    ctx.font = "8px 'Press Start 2P', monospace";
+    ctx.fillStyle = "#c9d2e0";
+    ctx.fillText("ARROWS: " + (arrowSide === "left" ? "◀ LEFT" : "RIGHT ▶"), W / 2, 36);
+}
+function drawBar(ctx, x, y, w, value, color) {
+    ctx.fillStyle = "#0a0b0f";
+    ctx.fillRect(x, y, w, 12);
+    ctx.fillStyle = "#b3261e";
+    ctx.fillRect(x + 2, y + 2, (w - 4) * value, 8);
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.fillRect(x + 2, y + 2, (w - 4) * value, 2);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x - 1, y - 1, w + 2, 14);
+}
+function drawArrowCount(ctx, x, y, count, align) {
+    drawArrow(ctx, align === "left" ? x + 8 : x - 30, y, -Math.PI / 2 + 0.7, 16);
+    ctx.font = "10px 'Press Start 2P', monospace";
+    ctx.fillStyle = "#e6e2d8";
+    ctx.textAlign = align;
+    ctx.fillText("x" + count, align === "left" ? x + 20 : x, y);
+}
+
+// ===================== Game loop =====================
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
+let showGrid = false;
+document.getElementById("grid-toggle").addEventListener("change", e => showGrid = e.target.checked);
+
+const pedestals = GameMap.find("S");
+let lastTime = 0;
+
+function doFrame(t) {
+    const dt = Math.min(0.05, (t - lastTime) / 1000);
+    lastTime = t;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bg, 0, HUD);
+
+    // Glowing lava cracks
+    const pulse = 0.55 + 0.45 * Math.sin(t / 500);
+    ctx.fillStyle = "rgba(255," + Math.round(90 + 60 * pulse) + ",20," + (0.5 + 0.4 * pulse) + ")";
+    cracks.forEach(pts => pts.forEach(p => ctx.fillRect(p.x, HUD + p.y, 2, 4)));
+
+    // Arrows: the active side changes every 6 seconds
+    const arrowSide = Math.floor(t / 6000) % 2 === 0 ? "left" : "right";
+    pedestals.forEach(p => {
+        const left = p.c < COLS / 2;
+        if ((arrowSide === "left") === left) drawArrowPickup(ctx, p.c, p.r, t);
+    });
+
+    // Fireballs
+    if (t - lastFire > 1300) {
+        spawnFire(t);
+        lastFire = t;
+    }
+    drawFires(ctx, t);
+
+    // The princess, the braziers, the dragon and the players
+    drawCage(ctx, t);
+    braziers.forEach(b => drawBrazier(ctx, b.c, b.r, t));
+    drawDragon(ctx, t);
+    drawArcher(ctx, shooters[0].c, shooters[0].r, "#3d7bff", t, 0);
+    drawArcher(ctx, shooters[1].c, shooters[1].r, "#ff4d4d", t, 1.5);
+    updateShots(ctx, t, dt);
+
+    // Light: torches, the braziers and the dragon's glow
+    ctx.globalCompositeOperation = "lighter";
+    torches.concat(braziers).forEach(tc => {
+        const flick = 0.85 + 0.15 * Math.sin(t / 70 + tc.c * 3 + tc.r);
+        const x = tc.c * TILE + 20, y = HUD + tc.r * TILE + 20;
+        const g = ctx.createRadialGradient(x, y, 2, x, y, 110 * flick);
+        g.addColorStop(0, "rgba(255,160,60,0.28)");
+        g.addColorStop(1, "rgba(255,120,40,0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(x - 120, y - 120, 240, 240);
+    });
+    const dx = dragonArea.x + 60, dy = HUD + dragonArea.y + 60;
+    const lg = ctx.createRadialGradient(dx, dy, 10, dx, dy, 190);
+    lg.addColorStop(0, "rgba(255,80,20," + (0.22 * pulse + 0.08) + ")");
+    lg.addColorStop(1, "rgba(255,60,20,0)");
+    ctx.fillStyle = lg;
+    ctx.fillRect(dx - 200, dy - 200, 400, 400);
+    ctx.globalCompositeOperation = "source-over";
+
+    // Torch flames
+    torches.forEach(tc => {
+        const x = tc.c * TILE + 16, y = HUD + tc.r * TILE + 8;
+        const h = 8 + Math.round(3 * Math.abs(Math.sin(t / 80 + tc.c)));
+        ctx.fillStyle = "#3a2a1c";
+        ctx.fillRect(x + 1, y + 10, 6, 10);
+        ctx.fillStyle = "#ff6a1a";
+        ctx.fillRect(x, y + 10 - h, 8, h);
+        ctx.fillStyle = "#ffd36b";
+        ctx.fillRect(x + 2, y + 12 - h * 0.6, 4, h * 0.6 - 2);
+    });
+
+    // Dark vignette around the edges
+    const v = ctx.createRadialGradient(380, HUD + 260, 180, 380, HUD + 260, 470);
+    v.addColorStop(0, "rgba(0,0,0,0)");
+    v.addColorStop(1, "rgba(0,0,0,0.55)");
+    ctx.fillStyle = v;
+    ctx.fillRect(0, HUD, COLS * TILE, ROWS * TILE);
+
+    // Optional grid with coordinates
+    if (showGrid) {
+        ctx.strokeStyle = "rgba(255,255,255,0.15)";
+        ctx.lineWidth = 1;
+        ctx.font = "7px 'Press Start 2P', monospace";
+        ctx.fillStyle = "rgba(255,255,255,0.6)";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        for (let r = 0; r < ROWS; r++)
+            for (let c = 0; c < COLS; c++) {
+                ctx.strokeRect(c * TILE + 0.5, HUD + r * TILE + 0.5, TILE, TILE);
+                ctx.fillText(c + "," + r, c * TILE + 3, HUD + r * TILE + 3);
+            }
+    }
+
+    drawHUD(ctx, t, arrowSide);
+    requestAnimationFrame(doFrame);
+}
+
+buildBackground();
+document.fonts.ready.then(() => requestAnimationFrame(doFrame));
+</script>
+</body>
+</html>
