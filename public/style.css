@@ -1,0 +1,51 @@
+body {
+    margin: 0;
+    background: #0e0f14;
+    color: #e6e2d8;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+#game-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 40px;
+}
+
+h1 {
+    font-family: "Press Start 2P", monospace;
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: #f2c14e;
+    margin: 0 0 16px;
+}
+
+#game {
+    width: 100%;
+    max-width: 1140px;
+    image-rendering: pixelated;
+    border: 4px solid #2a2d3a;
+    border-radius: 6px;
+    background: #000;
+    display: block;
+}
+
+.controls {
+    margin-top: 14px;
+    color: #9a958a;
+    font-size: 14px;
+    line-height: 2;
+    text-align: center;
+}
+
+.p1 { color: #3d7bff; font-weight: bold; }
+.p2 { color: #ff4d4d; font-weight: bold; }
+
+kbd {
+    background: #171922;
+    border: 1px solid #2a2d3a;
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: #e6e2d8;
+    font-size: 13px;
+}

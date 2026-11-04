@@ -1,0 +1,15 @@
+{
+  "name": "dragons-lair",
+  "version": "1.0.0",
+  "description": "Dragon's Lair - a two-player real-time dungeon game (COMP4021 group project)",
+  "main": "game_server.js",
+  "scripts": {
+    "start": "node game_server.js"
+  },
+  "dependencies": {
+    "argon2": "^0.44.0",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "socket.io": "^4.8.1"
+  }
+}

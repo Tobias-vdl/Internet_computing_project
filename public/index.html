@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dragon's Lair</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- TODO: the home page (register / sign in / pair up, from lab 5) goes here -->
+
+    <!-- The game play page -->
+    <div id="game-page">
+        <h1>DRAGON'S LAIR</h1>
+        <canvas id="game" width="760" height="568"></canvas>
+        <div class="controls">
+            <div><span class="p1">P1</span> Move <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · Shoot <kbd>Space</kbd> · God mode <kbd>G</kbd></div>
+            <div><span class="p2">P2</span> Move <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> · Shoot <kbd>Enter</kbd> · God mode <kbd>M</kbd></div>
+            <label><input type="checkbox" id="grid-toggle"> Show tile coordinates</label>
+        </div>
+    </div>
+
+    <!-- Helper modules -->
+    <script src="scripts/pixel_art.js"></script>
+    <script src="scripts/game_map.js"></script>
+
+    <!-- Modules from lab 3 -->
+    <script src="scripts/bounding_box.js"></script>
+    <script src="scripts/sprite.js"></script>
+    <script src="scripts/player.js"></script>
+
+    <!-- Things in the game -->
+    <script src="scripts/dungeon.js"></script>
+    <script src="scripts/dragon.js"></script>
+    <script src="scripts/princess.js"></script>
+    <script src="scripts/brazier.js"></script>
+    <script src="scripts/fireball.js"></script>
+    <script src="scripts/arrow.js"></script>
+    <script src="scripts/arrow_pickup.js"></script>
+    <script src="scripts/hud.js"></script>
+
+    <!-- The main game code -->
+    <script src="scripts/game.js"></script>
+    <script>
+        document.getElementById("grid-toggle").addEventListener("change", e => Game.setShowGrid(e.target.checked));
+        document.fonts.ready.then(() => Game.start());
+    </script>
+</body>
+</html>
