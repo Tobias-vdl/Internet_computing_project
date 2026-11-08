@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<head>
+    <title>The Dragon's Lair</title>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+    <!-- The Main Menu -->
+    <div id="main-menu">
+        <button id="menu-register-button">Register New Account</button>
+        <button id="menu-signin-button">Sign-In</button>
+        <button id="join-button" style="display: none">Join Game</button>
+        <button id="signout-button" style="display: none">Sign-Out</button>
+        <div id="menu-message"></div>
+    </div>
+
+    <!-- Page for registering account -->
+    <div id="register-page" style="display: none">
+        <form id="register-form">
+            <div>Register Account</div>
+
+            <input id="register-username" maxlength="10" placeholder="Enter a username"></input>
+            <input id="register-password" type="password" placeholder="Enter a password"></input>
+            <input id="register-password-repeat" type="password" placeholder="Repeat password"></input>
+
+            <div>
+                <button class="back-to-menu">Cancel</button>
+                <button id="register-button">Register</button>
+            </div>
+
+            <div id="register-message"></div>
+        </form>
+    </div>
+
+    <!-- Page for signing in -->
+    <div id="signin-page" style="display: none">
+        <form id="signin-form">
+            <div>Sign-In</div>
+
+            <input id="signin-username" placeholder="Enter username"></input>
+            <input id="signin-password" type="password" placeholder="Enter password"></input>
+
+            <div>
+                <button class="back-to-menu">Cancel</button>
+                <button id="signin-button">Sign-In</button>
+            </div>
+
+            <div id="signin-message"></div>
+        </form>
+    </div>
+
+    <!-- Page for waiting for other player -->
+    <div id="lobby" style="display: none">
+        <button class="back-to-menu">Back</button>
+    </div>
+
+    <!-- The actual game page -->
+    <div id="game" style="display: none">
+
+    </div>
+
+    <!-- Page to show when game over -->
+    <div id="game-over" style="display: none">
+
+    </div>
+
+    <!-- JavaScript files -->
+    <script src="scripts/userHandling.js"></script>
+
+    <script>
+        $(function() {
+            UserHandling.init();
+            UserHandling.validate();
+        });
+    </script>
+</body>
