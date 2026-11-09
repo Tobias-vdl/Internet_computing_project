@@ -12,6 +12,12 @@ app.use(express.static("public"));
 // Use the json middleware to parse JSON data
 app.use(express.json());
 
+// Create the Socket.IO server
+const { createServer } = require("http");
+const { Server } = require("socket.io");
+const httpServer = createServer(app);
+const io = new Server(httpServer);
+
 // Use the session middleware to maintain sessions
 const gameSession = session({
     secret: "game",
@@ -117,7 +123,83 @@ app.get("/signout", (req, res) => {
     res.json({ success: true });
 });
 
+// A JavaScript object storing the players
+let players = {}
+
+// Indicate whether a game has started
+let gameStarted = false;
+
+io.on("connection", (socket) => {
+
+    // Player joins the game
+    socket.on("join", (username) => {
+        // Check if game already started
+        if (gameStarted) {
+            socket.emit("joinError", "Game Already Started");
+            return;
+        }
+
+        // If lobby already full
+        if (Object.keys(players).length == 2) {
+            socket.emit("joinError", "Game Lobby Already Full!");
+            return;
+        }
+
+        // Put the player in the players object
+        players[socket.id] = { username, ready: false };
+
+        socket.emit("joinSuccess");
+
+        io.emit("updatePlayers", players);
+    });
+
+    const startGame = function() {
+        io.emit("gameStart");
+
+        gameStarted = true;
+    };
+
+    socket.on("ready", () => {
+        // Mark player as ready
+        players[socket.id].ready = true;
+
+        io.emit("updatePlayers", players);
+
+        // Check if all players ready
+        let allReady = true;
+        for (const id in players) {
+            const p = players[id];
+
+            if (!p.ready) {
+                allReady = false;
+                break;
+            }
+        }
+        if (allReady) {
+            startGame();
+        }
+    });
+
+    const endGame = function() {
+        io.emit("gameEnd", players);
+
+        // Reset the game
+        players = {};
+        gameStarted = false;
+    };
+
+    socket.on("disconnect", () => {
+        // Remove the player from the game
+        if (socket.id in players) {
+            delete players[socket.id];
+
+            // Broadcast the players to the connected browsers
+            io.emit("updatePlayers", players);
+        }
+    });
+});
+
 // Use a web server to listen at port 8000
-app.listen(8000, () => {
+httpServer.listen(8000, () => {
     console.log("The game server has started...");
 });
