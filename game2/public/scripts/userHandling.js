@@ -114,6 +114,10 @@ const UserHandling = (function() {
         socket.on("gameEnd", (result) => {
             Game.stopGame();
 
+            // Drop the socket (intentionally, so no reload) => 
+            // so this client can no longer receive events for games it is not part of
+            disconnectSocket();
+
             $("#game").hide();
             $("#game-over").show();
 
@@ -353,13 +357,7 @@ const UserHandling = (function() {
         // Click event for the play again button
         $("#play-again-button").on("click", function() {
             $("#game-over").hide();
-            $("#lobby").show();
-
-            $("#lobby-players").empty();
-            $("#lobby-message").text("");
-            $("#ready-button").prop("disabled", true);
-
-            socket.emit("join", currentUser);
+            joinGame();
         });
     }
     

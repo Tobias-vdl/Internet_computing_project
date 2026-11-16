@@ -202,7 +202,9 @@ io.on("connection", (socket) => {
 
             // Both players are ready, send them into the game
             // The first player in the players object becomes the host
-            io.emit("gameStart", Object.keys(players)[0], players);
+            // Targeted at the participants so clients outside this game
+            // (e.g. still on a previous game-over screen) never receive it
+            io.to(Object.keys(players)).emit("gameStart", Object.keys(players)[0], players);
         }
     });
 
@@ -278,7 +280,9 @@ io.on("connection", (socket) => {
             s.accuracy = s.arrowsFired > 0 ? Math.round((s.arrowsHit / s.arrowsFired) * 100) : 0;
         }
 
-        io.emit("gameEnd", { players, stats, winner: winnerId, gameTime, disconnectId });
+        // Targeted at the participants so stale clients (e.g. a player
+        // still viewing a previous game's statistics) keep their screen
+        io.to(Object.keys(players)).emit("gameEnd", { players, stats, winner: winnerId, gameTime, disconnectId });
 
         // Reset the game
         players = {};
