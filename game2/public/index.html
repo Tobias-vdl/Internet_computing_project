@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>The Dragon's Lair</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;700&family=Pirata+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+    <!-- The Main Menu -->
+    <div id="main-menu">
+        <h1 class="title">The Dragon's Lair</h1>
+        <p class="tagline">Two knights. One dragon. Only one legend.</p>
+
+        <div class="menu-columns">
+            <!-- Left: account and joining -->
+            <section class="panel login-panel">
+                <p id="welcome-username" style="display: none"></p>
+                <button id="menu-register-button">Register New Account</button>
+                <button id="menu-signin-button">Sign-In</button>
+                <button id="join-button" class="primary" style="display: none">Join Game</button>
+                <button id="signout-button" style="display: none">Sign-Out</button>
+                <div id="menu-message"></div>
+            </section>
+
+            <!-- Right: game description -->
+            <section class="panel" id="game-description">
+                <h2>The Goal</h2>
+                <div id="goal">Don't die. Kill the dragon (and maybe the other knight).</div>
+
+                <div id="motivation">
+                    <p>
+                        Deep beneath the mountain, a dragon guards a hoard that no one has ever
+                        carried out. Two knights have entered its lair, but the honour of the kill
+                        can belong to only one. Gather arrows, strike the dragon before your rival
+                        does, and watch out for the other knight who wants to steal the glory. 
+                        Torches are burning low, and the lair's ancient gates will seal at dawn. 
+                        Slay the dragon before they close, or no one goes home the victor!
+                    </p>
+                    <p>
+                        The dragon is also opposed to dying. It spits fireballs: a tile glows red as
+                        a warning, then bursts into flames for a few seconds. Stay off it.
+                    </p>
+                </div>
+
+                <h2>The Rules</h2>
+                <ul id="rules">
+                    <li>Each knight has their own <strong>Dragon HP</strong> bar. Only your arrows drain yours, and the first knight to empty it wins.</li>
+                    <li>You can carry up to 3 arrows, and you can shoot once per second. Arrows you pick up reappear a few seconds later.</li>
+                    <li>Arrows hurt knights too. A fallen knight returns to their starting spot after 3 seconds.</li>
+                    <li>You have 200 seconds before the gates close. If the dragon is still alive when time runs out, nobody claims the glory and it’s a draw.</li>
+                </ul>
+
+                <h2>The Controls</h2>
+                <div id="controls">
+                    <ul>
+                        <li>Move your knight with <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></li>
+                        <li>Shoot arrows with <kbd>Space</kbd> (if you have any)</li>
+                        <li>Don't press <kbd>G</kbd> (That is cheating!)</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Page for registering account -->
+    <div id="register-page" style="display: none">
+        <div class="card">
+            <form id="register-form">
+                <h2 class="card-title">Register Account</h2>
+
+                <input id="register-username" maxlength="10" placeholder="Enter a username" autocomplete="username">
+                <input id="register-password" maxlength="40" type="password" placeholder="Enter a password" autocomplete="new-password">
+                <input id="register-password-repeat" maxlength="40" type="password" placeholder="Repeat password" autocomplete="new-password">
+
+                <div class="button-row">
+                    <button class="back-to-menu" type="button">Cancel</button>
+                    <button id="register-button" class="primary" type="submit">Register</button>
+                </div>
+
+                <div id="register-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Page for signing in -->
+    <div id="signin-page" style="display: none">
+        <div class="card">
+            <form id="signin-form">
+                <h2 class="card-title">Sign-In</h2>
+
+                <input id="signin-username" maxlength="10" placeholder="Enter username" autocomplete="username">
+                <input id="signin-password" maxlength="40" type="password" placeholder="Enter password" autocomplete="current-password">
+
+                <div class="button-row">
+                    <button class="back-to-menu" type="button">Cancel</button>
+                    <button id="signin-button" class="primary" type="submit">Sign-In</button>
+                </div>
+
+                <div id="signin-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Page for Connecting -->
+    <div id="connect-page" style="display: none">
+        <p>Connecting...</p>
+        <div id="connect-message"></div>
+    </div>
+
+    <!-- Page for waiting for other player -->
+    <div id="lobby" style="display: none">
+        <div class="card">
+            <h2 class="card-title">Lobby</h2>
+            <div id="lobby-players"></div>
+            <div id="lobby-message"></div>
+
+            <div class="button-row">
+                <button class="back-to-menu">Back</button>
+                <button id="ready-button" class="primary" disabled>Ready</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- The actual game page -->
+    <div id="game" style="display: none">
+        <div id="game-frame">
+            <div id="hud">
+                <!-- Player 1 (host): blue -->
+                <div class="hud-panel hud-blue">
+                    <div class="hud-row">
+                        <span class="hud-name" id="name-blue"></span>
+                        <span class="hud-arrows">Arrows <span class="hud-pips" id="pips-blue"></span></span>
+                    </div>
+                    <div class="hud-hp">
+                        <span class="hud-hp-label">Dragon HP</span>
+                        <div class="hp-bar" id="hp-blue"></div>
+                    </div>
+                </div>
+
+                <span class="hud-time" id="time-remaining">?</span>
+
+                <!-- Player 2: red -->
+                <div class="hud-panel hud-red">
+                    <div class="hud-row">
+                        <span class="hud-name" id="name-red"></span>
+                        <span class="hud-arrows">Arrows <span class="hud-pips" id="pips-red"></span></span>
+                    </div>
+                    <div class="hud-hp">
+                        <span class="hud-hp-label">Dragon HP</span>
+                        <div class="hp-bar" id="hp-red"></div>
+                    </div>
+                </div>
+            </div>
+
+            <canvas width="840" height="480"></canvas>
+        </div>
+    </div>
+
+    <!-- Page to show when game over -->
+    <div id="game-over" style="display: none">
+        <h2 id="winner-message"></h2>
+        <p id="elapsed-time"></p>
+        <table id="stats-table"></table>
+        <div class="button-row">
+            <button id="back-to-menu-button" class="back-to-menu">Back to Menu</button>
+            <button id="play-again-button" class="primary">Play Again</button>
+        </div>
+    </div>
+
+    <!-- JavaScript files -->
+    <script src="scripts/userHandling.js"></script>
+    <script src="scripts/game.js"></script>
+    <script src="scripts/boundingBox.js"></script>
+    <script src="scripts/sprite.js"></script>
+    <script src="scripts/maze.js"></script>
+    <script src="scripts/player.js"></script>
+    <script src="scripts/dragon.js"></script>
+    <script src="scripts/arrow.js"></script>
+    <script src="scripts/fire.js"></script>
+    <script src="scripts/hud.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+        $(function() {
+            UserHandling.init();
+            UserHandling.validate();
+        });
+    </script>
+</body>
+</html>
