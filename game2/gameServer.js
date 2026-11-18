@@ -304,6 +304,7 @@ io.on("connection", (socket) => {
         if (socket.id in players) {
             if (!gameStarted) {
                 delete players[socket.id];
+                delete stats[socket.id];
                 // Reset readiness of the remaining players while still in the lobby
                 for (const id in players) {
                     players[id].ready = false;
