@@ -49,6 +49,7 @@ const Game = (function() {
     // Loop and timer handles
     let timeRemaining = TOTAL_GAME_TIME;
     let running = false;
+    let playerMovementUpdateInterval = null;
     let frameId = null;
     let countdownTimer = null;
 
@@ -150,6 +151,8 @@ const Game = (function() {
         delete arrowsFlying[arrowId];
 
         if (emit) socket.emit("playerDied", { victimId, killerId, arrowId });
+
+        updateHudArrows();
     }
 
     /* ------------------------------------------------------------ Arrows */
@@ -308,6 +311,7 @@ const Game = (function() {
 
         // Stop the render loop and timers
         cancelAnimationFrame(frameId);
+        clearInterval(playerMovementUpdateInterval);
         clearTimeout(countdownTimer);
 
         // Delete all created objects
@@ -321,7 +325,7 @@ const Game = (function() {
         // Kill listeners as not to initiate again
         // (must match the socket.on registrations in init)
         const events = [
-            "playerMove","playerStop","shootArrow","playerDied",
+            "playerMove","shootArrow","playerDied",
             "dragonHit","arrowHitWall","pickupArrow",
             "spawnFire", "requestShoot", "toggleGodMode"
         ];
@@ -341,25 +345,21 @@ const Game = (function() {
                 // Left (A)
                 case 65:
                     player.move(1);
-                    socket.emit("playerMove", { direction: 1 });
                     break;
 
                 // Up (W)
                 case 87:
                     player.move(2);
-                    socket.emit("playerMove", { direction: 2 });
                     break;
 
                 // Right (D)
                 case 68:
                     player.move(3);
-                    socket.emit("playerMove", { direction: 3 });
                     break;
 
                 // Down (S)
                 case 83:
                     player.move(4);
-                    socket.emit("playerMove", { direction: 4 });
                     break;
 
                 // Spacebar => shoot
@@ -387,25 +387,21 @@ const Game = (function() {
                 // Left (A)
                 case 65:
                     player.stop(1);
-                    socket.emit("playerStop", { direction: 1 });
                     break;
 
                 // Up (W)
                 case 87:
                     player.stop(2);
-                    socket.emit("playerStop", { direction: 2 });
                     break;
 
                 // Right (D)
                 case 68:
                     player.stop(3);
-                    socket.emit("playerStop", { direction: 3 });
                     break;
 
                 // Down (S)
                 case 83:
                     player.stop(4);
-                    socket.emit("playerStop", { direction: 4 });
                     break;
             }
         });
@@ -480,15 +476,28 @@ const Game = (function() {
 
         nextSpitAt = performance.now() + SPIT_INTERVAL;
 
+        // Interval running to update player position - as not to desync players
+        playerMovementUpdateInterval = setInterval(() => {
+            const myPlayer = players[myId];
+            const { x, y } = myPlayer.getXY();
+            socket.emit("playerMove", {
+                x, y,
+                direction: myPlayer.getDirection(),
+                facing: myPlayer.getFacing()
+            });
+        }, 20);
+
         /* Socket event handlers - mirror what the other client reports.
            Movement is event-driven: key presses and releases are relayed,
            and each client moves its own copy of both players every frame. */
         socket.on("playerMove", (data) => {
-            players[otherId].move(data.direction);
-        });
-
-        socket.on("playerStop", (data) => {
-            players[otherId].stop(data.direction);
+            const otherPlayer = players[otherId];
+            otherPlayer.setXY(data.x, data.y);
+            if (data.direction) {
+                otherPlayer.move(data.direction);
+            } else {
+                otherPlayer.stop(data.facing);
+            }
         });
 
         socket.on("requestShoot", (data) => {
@@ -532,7 +541,12 @@ const Game = (function() {
 
             /* Update the sprites */
             for (const playerId in players) {
-                players[playerId].update(now);
+                // Don't move player twice - player moved though update loop
+                if (playerId == myId) {
+                    players[playerId].update(now, true);
+                } else {
+                    players[playerId].update(now, false);
+                }
             }
             dragon.update(now);
             for (const spot in arrowsGround) arrowsGround[spot].update(now);

@@ -217,11 +217,6 @@ io.on("connection", (socket) => {
         socket.broadcast.emit("playerMove", data);
     });
 
-    socket.on("playerStop", (data) => {
-        if (!gameStarted) return;
-        socket.broadcast.emit("playerStop", data);
-    });
-
     socket.on("dragonHit", (data) => {
         if (!gameStarted) return;
         stats[data.playerId].arrowsHit++;

@@ -109,7 +109,7 @@ const Player = function(ctx, x, y, gameArea, playerNum, maxArrows, canMoveFn) {
 
     // This function updates the player depending on his movement.
     // - `time` - The timestamp when this function is called
-    const update = function(time) {
+    const update = function(time, move) {
         if (lastUpdateTime == 0) lastUpdateTime = time;
 
         /* Distance moved since the previous frame, capped so a throttled
@@ -118,7 +118,7 @@ const Player = function(ctx, x, y, gameArea, playerNum, maxArrows, canMoveFn) {
         lastUpdateTime = time;
 
         /* Update the player if the player is moving */
-        if (direction != 0) {
+        if (direction != 0 && move) {
             let { x, y } = sprite.getXY();
 
             if (direction == 1 || direction == 3) {
@@ -183,6 +183,7 @@ const Player = function(ctx, x, y, gameArea, playerNum, maxArrows, canMoveFn) {
             alive = false;
             if (reviveTimeout != null) clearTimeout(reviveTimeout);
             reviveTimeout = setTimeout(revivePlayer, RESPAWN_DELAY);
+            numArrows = 0;
             return true;
         }
 
