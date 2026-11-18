@@ -19,6 +19,8 @@ const UserHandling = (function() {
         $("#connect-page").hide();
         $("#lobby").hide();
         $("#game").hide();
+        $("#register-page").hide();
+        $("#signin-page").hide();
         $("#game-over").hide();
         $("#main-menu").show();
 
