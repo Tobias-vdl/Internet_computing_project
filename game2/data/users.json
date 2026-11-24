@@ -10,5 +10,8 @@
   },
   "Toby": {
     "password": "$argon2id$v=19$m=65536,t=3,p=4$OB4/hLFzeWe4C9Xk2cRbqQ$ho2+jY8XpG+sJO/YF4ykO1eEAUv3sZr/SNlliNf44y4"
+  },
+  "Max": {
+    "password": "$argon2id$v=19$m=65536,t=3,p=4$oOw8E+wl0KXczqGhoEEnZA$nJc3RI/do2CVnD/48wABx4y9IaepMggh/nWV4TdE790"
   }
 }
