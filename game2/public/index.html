@@ -16,7 +16,7 @@
     <!-- The Main Menu -->
     <div id="main-menu">
         <h1 class="title">The Dragon's Lair</h1>
-        <p class="tagline">Two knights. One dragon. One captive princess.</p>
+        <p class="tagline">Two knights. One dragon. One Golden Rubber Duck.</p>
 
         <div class="menu-columns">
             <!-- Left: account and joining -->
@@ -32,15 +32,15 @@
             <!-- Right: game description -->
             <section class="panel" id="game-description">
                 <h2>The Goal</h2>
-                <div id="goal">Slay the dragon and win the princess. Don't die (and maybe stop the other knight).</div>
+                <div id="goal">Slay the dragon and claim the Golden Rubber Duck. Don't die (and maybe stop the other knight).</div>
 
                 <div id="motivation">
                     <p>
-                        Deep beneath the mountain, a dragon has locked the princess in a cage and
-                        keeps her behind it in its lair. Two knights have come to rescue her, but only
-                        the one who slays the dragon will win her hand. Gather arrows, strike the
-                        dragon before your rival does, and watch out for the other knight who wants
-                        to steal the glory - and the princess. 
+                        Deep beneath the mountain, a dragon guards the most precious treasure in the
+                        land: the legendary Golden Rubber Duck. Two knights have entered its lair, but
+                        only the one who slays the dragon gets to take the duck home - and enjoy a
+                        well-earned victory bath. Gather arrows, strike the dragon before your rival
+                        does, and watch out for the other knight who wants to steal the glory - and the duck. 
                         Torches are burning low, and the lair's ancient gates will seal at dawn. 
                         Slay the dragon before they close, or no one goes home the victor!
                     </p>
@@ -52,7 +52,7 @@
 
                 <h2>The Rules</h2>
                 <ul id="rules">
-                    <li>Each knight has their own <strong>Dragon HP</strong> bar. Only your arrows drain yours, and the first knight to empty it slays the dragon and wins the princess.</li>
+                    <li>Each knight has their own <strong>Dragon HP</strong> bar. Only your arrows drain yours, and the first knight to empty it slays the dragon and claims the Golden Rubber Duck.</li>
                     <li>You can carry up to 3 arrows, and you can shoot once per second. Arrows you pick up reappear a few seconds later.</li>
                     <li>Arrows hurt knights too. A fallen knight returns to their starting spot after 3 seconds.</li>
                     <li>You have 200 seconds before the gates close. If the dragon is still alive when time runs out, nobody claims the glory and it’s a draw.</li>
@@ -168,6 +168,7 @@
     <div id="game-over" style="display: none">
         <h2 id="winner-message"></h2>
         <p id="elapsed-time"></p>
+        <canvas id="victory-canvas" width="320" height="200" style="display: none"></canvas>
         <table id="stats-table"></table>
         <h3 id="ranking-title">Overall Ranking</h3>
         <table id="ranking-table"></table>
@@ -185,7 +186,8 @@
     <script src="scripts/maze.js"></script>
     <script src="scripts/player.js"></script>
     <script src="scripts/dragon.js"></script>
-    <script src="scripts/princess.js"></script>
+    <script src="scripts/goldenDuck.js"></script>
+    <script src="scripts/victoryBath.js"></script>
     <script src="scripts/arrow.js"></script>
     <script src="scripts/fire.js"></script>
     <script src="scripts/hud.js"></script>

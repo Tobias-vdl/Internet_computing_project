@@ -38,7 +38,7 @@ const Game = (function() {
     const arrowsFlying = {};
     const arrowsGround = {};
     let dragon = null;
-    let princess = null;
+    let goldenDuck = null;
     const dragonHP = {};
     const fires = {};
 
@@ -423,7 +423,7 @@ const Game = (function() {
         }
 
         /* Get the canvas and 2D context */
-        const cv = $("canvas").get(0);
+        const cv = $("#game canvas").get(0);
         context = cv.getContext("2d");
 
         // Set image smoothing to false
@@ -451,11 +451,11 @@ const Game = (function() {
             gameArea, otherNum, MAX_ARROWS, maze.canMove
         );
 
-        // Dragon - drawn a little lower in its alcove, so the princess
-        // in her cage is visible on the wall behind it
+        // Dragon - drawn a little lower in its alcove, so the golden
+        // rubber duck on its pedestal is visible on the wall behind it
         const { x, y } = maze.getDragon();
         dragon = Dragon(context, x, y + 20);
-        princess = Princess(context, x, y - 24);
+        goldenDuck = GoldenDuck(context, x, y - 22);
         dragonHP[myId] = DRAGON_MAX_HP;
         dragonHP[otherId] = DRAGON_MAX_HP;
 
@@ -575,7 +575,7 @@ const Game = (function() {
             context.clearRect(0, 0, cv.width, cv.height);
             context.drawImage(maze.getBackground(), 0, 0);
             for (const playerId in players) players[playerId].draw();
-            princess.draw(now);
+            goldenDuck.draw(now);
             dragon.draw();
             for (const spot in arrowsGround) arrowsGround[spot].draw();
             for (const arrowId in arrowsFlying) arrowsFlying[arrowId].arrow.draw();

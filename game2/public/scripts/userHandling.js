@@ -14,6 +14,7 @@ const UserHandling = (function() {
     }
 
     const resetToMenu = function(message) {
+        VictoryBath.stop();
         disconnectSocket();
 
         $("#connect-page").hide();
@@ -129,11 +130,16 @@ const UserHandling = (function() {
             }
 
             if (result.winner != null) {
-                $("#winner-message").text((names[result.winner]) + " slew the dragon and won the princess!");
+                $("#winner-message").text((names[result.winner]) + " slew the dragon and claimed the Golden Rubber Duck!");
+                // The first player in the players object is the host (blue)
+                const winnerColour = Object.keys(result.players)[0] == result.winner ? "blue" : "red";
+                VictoryBath.start(winnerColour);
             } else if (result.disconnectId != null) {
                 $("#winner-message").text("A player was disconnected. Game Terminated!");
+                VictoryBath.stop();
             } else {
-                $("#winner-message").text("None managed to defeat the dragon. It is a draw!");
+                $("#winner-message").text("None managed to defeat the dragon. Nobody claims the duck - it is a draw!");
+                VictoryBath.start(null);
             }
 
             if (result.gameTime != null) {
@@ -388,6 +394,7 @@ const UserHandling = (function() {
 
         // Click event for the play again button
         $("#play-again-button").on("click", function() {
+            VictoryBath.stop();
             $("#game-over").hide();
             joinGame();
         });
