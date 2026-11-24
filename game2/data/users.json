@@ -7,5 +7,8 @@
   },
   "c": {
     "password": "$argon2id$v=19$m=65536,t=3,p=4$t2zwzdpbVJFoVSg5f1gzsA$10DDwgZZpityKzIRAXZRIAaV/Ubo2+fYS9Vik7MyDo0"
+  },
+  "Toby": {
+    "password": "$argon2id$v=19$m=65536,t=3,p=4$OB4/hLFzeWe4C9Xk2cRbqQ$ho2+jY8XpG+sJO/YF4ykO1eEAUv3sZr/SNlliNf44y4"
   }
 }

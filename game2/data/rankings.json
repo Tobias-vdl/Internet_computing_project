@@ -1,0 +1,22 @@
+{
+  "b": {
+    "games": 1,
+    "wins": 0,
+    "draws": 0,
+    "losses": 1,
+    "dragonDamage": 0,
+    "kills": 1,
+    "deaths": 0,
+    "fastestWin": null
+  },
+  "a": {
+    "games": 1,
+    "wins": 1,
+    "draws": 0,
+    "losses": 0,
+    "dragonDamage": 7,
+    "kills": 0,
+    "deaths": 1,
+    "fastestWin": 72
+  }
+}
