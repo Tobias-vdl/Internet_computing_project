@@ -199,7 +199,11 @@ const updateRanking = function(room, winnerId, gameTime) {
 // This function sorts the players: most wins, then most dragon damage, then fastest win
 const getRanking = function(rankings) {
     return Object.keys(rankings)
-        .map(username => ({ username, ...rankings[username] }))
+        .map(username => ({
+            username, ...rankings[username],
+            // The average number of kills per game, with one decimal
+            avgKills: Math.round(10 * rankings[username].kills / rankings[username].games) / 10
+        }))
         .sort((a, b) =>
             (b.wins - a.wins) ||
             (b.dragonDamage - a.dragonDamage) ||

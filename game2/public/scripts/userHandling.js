@@ -180,6 +180,7 @@ const UserHandling = (function() {
                 $("<th>").text("Losses"),
                 $("<th>").text("Dragon Damage"),
                 $("<th>").text("Kills"),
+                $("<th>").text("Avg Kills"),
                 $("<th>").text("Fastest Win")
             ));
             (result.ranking || []).forEach((r, i) => {
@@ -191,6 +192,7 @@ const UserHandling = (function() {
                     $("<td>").text(r.losses),
                     $("<td>").text(r.dragonDamage),
                     $("<td>").text(r.kills),
+                    $("<td>").text(r.avgKills.toFixed(1)),
                     $("<td>").text(r.fastestWin == null ? "-" : r.fastestWin + "sec")
                 );
                 // Highlight the players of this game
