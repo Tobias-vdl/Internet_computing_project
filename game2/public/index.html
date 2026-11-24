@@ -16,7 +16,7 @@
     <!-- The Main Menu -->
     <div id="main-menu">
         <h1 class="title">The Dragon's Lair</h1>
-        <p class="tagline">Two knights. One dragon. Only one legend.</p>
+        <p class="tagline">Two knights. One dragon. One captive princess.</p>
 
         <div class="menu-columns">
             <!-- Left: account and joining -->
@@ -32,14 +32,15 @@
             <!-- Right: game description -->
             <section class="panel" id="game-description">
                 <h2>The Goal</h2>
-                <div id="goal">Don't die. Kill the dragon (and maybe the other knight).</div>
+                <div id="goal">Slay the dragon and win the princess. Don't die (and maybe stop the other knight).</div>
 
                 <div id="motivation">
                     <p>
-                        Deep beneath the mountain, a dragon guards a hoard that no one has ever
-                        carried out. Two knights have entered its lair, but the honour of the kill
-                        can belong to only one. Gather arrows, strike the dragon before your rival
-                        does, and watch out for the other knight who wants to steal the glory. 
+                        Deep beneath the mountain, a dragon has locked the princess in a cage and
+                        keeps her behind it in its lair. Two knights have come to rescue her, but only
+                        the one who slays the dragon will win her hand. Gather arrows, strike the
+                        dragon before your rival does, and watch out for the other knight who wants
+                        to steal the glory - and the princess. 
                         Torches are burning low, and the lair's ancient gates will seal at dawn. 
                         Slay the dragon before they close, or no one goes home the victor!
                     </p>
@@ -51,7 +52,7 @@
 
                 <h2>The Rules</h2>
                 <ul id="rules">
-                    <li>Each knight has their own <strong>Dragon HP</strong> bar. Only your arrows drain yours, and the first knight to empty it wins.</li>
+                    <li>Each knight has their own <strong>Dragon HP</strong> bar. Only your arrows drain yours, and the first knight to empty it slays the dragon and wins the princess.</li>
                     <li>You can carry up to 3 arrows, and you can shoot once per second. Arrows you pick up reappear a few seconds later.</li>
                     <li>Arrows hurt knights too. A fallen knight returns to their starting spot after 3 seconds.</li>
                     <li>You have 200 seconds before the gates close. If the dragon is still alive when time runs out, nobody claims the glory and it’s a draw.</li>
@@ -184,6 +185,7 @@
     <script src="scripts/maze.js"></script>
     <script src="scripts/player.js"></script>
     <script src="scripts/dragon.js"></script>
+    <script src="scripts/princess.js"></script>
     <script src="scripts/arrow.js"></script>
     <script src="scripts/fire.js"></script>
     <script src="scripts/hud.js"></script>

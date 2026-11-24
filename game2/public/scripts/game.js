@@ -38,6 +38,7 @@ const Game = (function() {
     const arrowsFlying = {};
     const arrowsGround = {};
     let dragon = null;
+    let princess = null;
     const dragonHP = {};
     const fires = {};
 
@@ -450,9 +451,11 @@ const Game = (function() {
             gameArea, otherNum, MAX_ARROWS, maze.canMove
         );
 
-        // Dragon
+        // Dragon - drawn a little lower in its alcove, so the princess
+        // in her cage is visible on the wall behind it
         const { x, y } = maze.getDragon();
-        dragon = Dragon(context, x, y);
+        dragon = Dragon(context, x, y + 20);
+        princess = Princess(context, x, y - 24);
         dragonHP[myId] = DRAGON_MAX_HP;
         dragonHP[otherId] = DRAGON_MAX_HP;
 
@@ -572,6 +575,7 @@ const Game = (function() {
             context.clearRect(0, 0, cv.width, cv.height);
             context.drawImage(maze.getBackground(), 0, 0);
             for (const playerId in players) players[playerId].draw();
+            princess.draw(now);
             dragon.draw();
             for (const spot in arrowsGround) arrowsGround[spot].draw();
             for (const arrowId in arrowsFlying) arrowsFlying[arrowId].arrow.draw();

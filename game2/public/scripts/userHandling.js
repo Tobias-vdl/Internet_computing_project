@@ -129,7 +129,7 @@ const UserHandling = (function() {
             }
 
             if (result.winner != null) {
-                $("#winner-message").text((names[result.winner]) + " slew the dragon and wins!");
+                $("#winner-message").text((names[result.winner]) + " slew the dragon and won the princess!");
             } else if (result.disconnectId != null) {
                 $("#winner-message").text("A player was disconnected. Game Terminated!");
             } else {
