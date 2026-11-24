@@ -169,6 +169,34 @@ const UserHandling = (function() {
                     $("<td>").text(s.kills)
                 ));
             }
+
+            // Show the overall ranking of all players
+            const ranking = $("#ranking-table").empty();
+            ranking.append($("<tr>").append(
+                $("<th>").text("Rank"),
+                $("<th>").text("Player"),
+                $("<th>").text("Wins"),
+                $("<th>").text("Draws"),
+                $("<th>").text("Losses"),
+                $("<th>").text("Dragon Damage"),
+                $("<th>").text("Kills"),
+                $("<th>").text("Fastest Win")
+            ));
+            (result.ranking || []).forEach((r, i) => {
+                const row = $("<tr>").append(
+                    $("<td>").text(i + 1),
+                    $("<td>").text(r.username),
+                    $("<td>").text(r.wins),
+                    $("<td>").text(r.draws),
+                    $("<td>").text(r.losses),
+                    $("<td>").text(r.dragonDamage),
+                    $("<td>").text(r.kills),
+                    $("<td>").text(r.fastestWin == null ? "-" : r.fastestWin + "sec")
+                );
+                // Highlight the players of this game
+                if (Object.values(names).includes(r.username)) row.addClass("ranking-me");
+                ranking.append(row);
+            });
         });
 
         // Go back to front page if disconnected unexpectedly
@@ -371,6 +399,8 @@ const UserHandling = (function() {
                 if ("user" in json) {
                     currentUser = json.user.username;
                     toggleButtonsOnSignedInStatus(true);
+                    $("#welcome-username").text("Welcome, " + currentUser);
+                    $("#welcome-username").show();
                 } else {
                     toggleButtonsOnSignedInStatus(false);
                 }

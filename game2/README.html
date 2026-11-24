@@ -5,6 +5,14 @@
 <body>
     <h1>Dragon's Lair</h1>
     <hr />
+    <h2>Running the Game</h2>
+    <ol>
+        <li>Install the packages: <code>npm install</code></li>
+        <li>Start the server: <code>node gameServer.js</code></li>
+        <li>Open <a href="http://localhost:8000">http://localhost:8000</a> in two (or more) browser windows. Use a private/incognito window or a different browser for the second player, so the two players have separate login sessions.</li>
+    </ol>
+    <p>Several pairs of players can play at the same time: every pair gets its own game room on the server.</p>
+    <hr />
     <h2>Game Home Page</h2>
     <ul>
         <li><strong>Game description and instructions</strong>
@@ -87,30 +95,30 @@
     <ul>
         <li>The dragon has a separate HP bar for each player.</li>
         <li>The first player to reduce their HP bar to zero slays the dragon and <strong>wins</strong>; the other player <strong>loses</strong>.</li>
-        <li>A normal game lasts around 3 minutes.</li>
-        <li>If the dragon has not been slain after <strong>3 minutes</strong>, the player who has dealt the most damage to the dragon wins. If both have dealt the same amount of damage, the game ends in a draw.</li>
+        <li>A normal game lasts at most 200 seconds (3 min 20 sec).</li>
+        <li>If the dragon has not been slain when the time runs out, nobody claims the glory and the game ends in a <strong>draw</strong>.</li>
     </ul>
     <hr />
     <h2>Game Over Page</h2>
     <p>When the dragon is slain or the time runs out, both players are shown the game over page. It contains:</p>
     <ul>
         <li><strong>The winner</strong> of the game, or a message declaring a draw.</li>
-        <li><strong>The time</strong> elapsed, or a note that the time ran out.</li>
+        <li><strong>The time</strong> elapsed.</li>
         <li><strong>Statistics for each player:</strong>
             <ul>
-                <li>damage dealt to the dragon</li>
-                <li>arrows collected</li>
-                <li>arrows hit</li>
                 <li>arrows fired</li>
+                <li>arrows hit</li>
                 <li>accuracy (hits / fired)</li>
+                <li>damage dealt to the dragon</li>
+                <li>deaths</li>
                 <li>kills of the other player</li>
-                <li>deaths (by fireball, by the other player, and in total)</li>
             </ul>
         </li>
+        <li><strong>Overall ranking</strong> of the top 10 players across all games, stored on the server in <code>data/rankings.json</code>. Players are ranked by number of wins, then by total damage dealt to the dragon, then by their fastest win. Wins, draws, losses, dragon damage, kills and fastest win are shown, and the players of the game just played are highlighted.</li>
         <li><strong>Buttons</strong>
             <ul>
-                <li><strong>Play Again</strong> starts a rematch against the same opponent.</li>
-                <li><strong>Back to Home</strong> returns to the lobby.</li>
+                <li><strong>Play Again</strong> goes straight to a new game lobby, where the player is paired with the next player who joins (e.g. the same opponent pressing Play Again).</li>
+                <li><strong>Back to Menu</strong> returns to the home page.</li>
             </ul>
         </li>
     </ul>
