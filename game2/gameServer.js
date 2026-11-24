@@ -52,6 +52,10 @@ app.post("/register", async (req, res) => {
         res.json({ error: "Password can't be empty!" });
         return;
     }
+    if (username.length > 10) {
+        res.json({ error: "Username can be at most 10 characters!" });
+        return;
+    }
     if (!containWordCharsOnly(username)) {
         res.json({ error: "Username can only contain underscores, letters, or numbers" });
         return;
