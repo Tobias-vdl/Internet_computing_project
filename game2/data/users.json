@@ -1,17 +1,3 @@
 {
-  "a": {
-    "password": "$argon2id$v=19$m=65536,t=3,p=4$n8joDC42H+2R4hzBn0yUcQ$ZS4ZFMYAHlfVY7wihp6Zhzu4WuAmeSr9LtEloUpHxY4"
-  },
-  "b": {
-    "password": "$argon2id$v=19$m=65536,t=3,p=4$GwxVCWlh+ecU8d+7BeAo+w$sTBZ0SfhM+6nU9m+A76l27gGwyxo4qrdDYntwUbBZzc"
-  },
-  "c": {
-    "password": "$argon2id$v=19$m=65536,t=3,p=4$t2zwzdpbVJFoVSg5f1gzsA$10DDwgZZpityKzIRAXZRIAaV/Ubo2+fYS9Vik7MyDo0"
-  },
-  "Toby": {
-    "password": "$argon2id$v=19$m=65536,t=3,p=4$OB4/hLFzeWe4C9Xk2cRbqQ$ho2+jY8XpG+sJO/YF4ykO1eEAUv3sZr/SNlliNf44y4"
-  },
-  "Max": {
-    "password": "$argon2id$v=19$m=65536,t=3,p=4$oOw8E+wl0KXczqGhoEEnZA$nJc3RI/do2CVnD/48wABx4y9IaepMggh/nWV4TdE790"
-  }
+  
 }

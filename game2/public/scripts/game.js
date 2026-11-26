@@ -490,9 +490,7 @@ const Game = (function() {
             });
         }, 20);
 
-        /* Socket event handlers - mirror what the other client reports.
-           Movement is event-driven: key presses and releases are relayed,
-           and each client moves its own copy of both players every frame. */
+        /* Socket event handlers - mirror what the other client reports. */
         socket.on("playerMove", (data) => {
             const otherPlayer = players[otherId];
             otherPlayer.setXY(data.x, data.y);
